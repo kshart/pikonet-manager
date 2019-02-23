@@ -1,0 +1,36 @@
+{
+  "name": "calculate-net-manager",
+  "version": "0.0.1",
+  "description": "Calculate net manager",
+  "main": "index.js",
+  "scripts": {
+    "dev": "npx nodemon index.js",
+    "build": "npx babel src -d dist -s",
+    "serve": "npx babel-node src/index.js",
+    "test": "mocha --compilers js:babel-register",
+    "generate-docs": "rd /s /q docs && npx jsdoc -c jsdoc.json"
+  },
+  "author": "kshart",
+  "license": "MIT",
+  "dependencies": {
+    "mongodb": "^3.1.13",
+    "mongoose": "^5.4.9",
+    "websocket": "^1.0.28"
+  },
+  "devDependencies": {
+    "@babel/cli": "^7.2.3",
+    "@babel/core": "^7.2.2",
+    "@babel/node": "^7.2.2",
+    "@babel/plugin-proposal-class-properties": "^7.3.0",
+    "@babel/plugin-proposal-decorators": "^7.3.0",
+    "@babel/plugin-proposal-object-rest-spread": "^7.3.1",
+    "@babel/plugin-transform-async-to-generator": "^7.2.0",
+    "@babel/plugin-transform-modules-commonjs": "^7.2.0",
+    "@babel/polyfill": "^7.2.5",
+    "@babel/preset-env": "^7.3.1",
+    "babel-plugin-module-resolver": "^3.1.3",
+    "jsdoc": "^3.5.5",
+    "jsdoc-babel": "^0.5.0",
+    "tui-jsdoc-template": "^1.2.2"
+  }
+}

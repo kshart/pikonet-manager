@@ -1,0 +1,3 @@
+[submodule "calculate-net-server"]
+  path = calculate-net-server
+  url = git@github.com:kshart/calculate-net-server.git

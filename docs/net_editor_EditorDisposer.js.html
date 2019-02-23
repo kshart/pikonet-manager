@@ -1,0 +1,168 @@
+
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>Source: net/editor/EditorDisposer.js | Pikonet Manager</title>
+
+    <script src="scripts/prettify/prettify.js"> </script>
+    <script src="scripts/prettify/lang-css.js"> </script>
+    <!--[if lt IE 9]>
+      <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+    <link type="text/css" rel="stylesheet" href="styles/bootstrap.min.css">
+    <link type="text/css" rel="stylesheet" href="styles/prettify-jsdoc.css">
+    <link type="text/css" rel="stylesheet" href="styles/prettify-tomorrow.css">
+    <link type="text/css" rel="stylesheet" href="styles/tui-doc.css">
+
+    
+</head>
+<body>
+<nav class="lnb" id="lnb">
+    <div class="logo" style="">
+        
+            <img src="img/toast-ui.png" width="100%" height="100%">
+        
+    </div>
+    <div class="title">
+        <h1><a href="index.html" class="link">Pikonet Manager</a></h1>
+        
+    </div>
+    <div class="search-container" id="search-container">
+        <input type="text" placeholder="Search">
+        <ul></ul>
+    </div>
+    
+    <div class="lnb-api hidden"><h3>Classes</h3><ul><li><a href="EditorClient.html">EditorClient</a><button type="button" class="hidden toggle-subnav btn btn-link">  <span class="glyphicon glyphicon-plus"></span></button><div class="hidden" id="EditorClient_sub"><div class="member-type">Methods</div><ul class="inner"><li><a href="EditorClient.html#addChannelWatcher">addChannelWatcher</a></li><li><a href="EditorClient.html#handleRequest">handleRequest</a></li><li><a href="EditorClient.html#removeChannelWatcher">removeChannelWatcher</a></li><li><a href="EditorClient.html#send">send</a></li></ul></div></li><li><a href="Server.html">Server</a><button type="button" class="hidden toggle-subnav btn btn-link">  <span class="glyphicon glyphicon-plus"></span></button><div class="hidden" id="Server_sub"></div></li></ul></div><div class="lnb-api hidden"><h3>Global</h3><ul><li><a href="global.html#reconnectTimeout">reconnectTimeout</a></li></ul></div>
+</nav>
+<div id="resizer"></div>
+
+<div class="main" id="main">
+    
+
+
+
+    
+    <section>
+        <article>
+            <pre class="prettyprint source linenums"><code>import http from 'http'
+import { server as WebSocketServer } from 'websocket'
+import EditorClient from './EditorClient'
+
+export default class EditorDisposer {
+  /**
+   * Открытые сокеты соединений с серверами вычислений.
+   * @type {Map&lt;object>}
+   */
+  static clients = new Map()
+
+  /**
+   * Клиенты для каналов
+   * @deprecated Промежуточное решение
+   * @type {Map&lt;Array&lt;EditorClient>>}
+   */
+  static channelClients = new Map()
+  /**
+   * @deprecated Промежуточное решение
+   * @param {EditorClient} client клиент
+   * @param {String} channel имя канала
+   */
+  static addChannelWatcher (client, channel) {
+    console.log('addChannelWatcher')
+    if (!this.channelClients.has(channel)) {
+      this.channelClients.set(channel, [])
+    }
+    const clients = this.channelClients.get(channel)
+    if (!clients.includes(client)) {
+      clients.push(client)
+    }
+    console.log(Array.from(this.channelClients))
+  }
+  /**
+   * @deprecated Промежуточное решение
+   * @param {EditorClient} client клиент
+   * @param {String} channel имя канала
+   */
+  static removeChannelWatcher (client, channel) {
+    console.log('removeChannelWatcher')
+    if (!this.channelClients.has(channel)) {
+      return
+    }
+    const clients = this.channelClients.get(channel)
+
+    const index = clients.indexOf(client)
+    if (index &lt; 0) {
+      return
+    }
+    clients.splice(index, 1)
+    if (clients.length &lt;= 0) {
+      this.channelClients.delete(channel)
+    }
+  }
+
+  static init () {
+    const httpServer = http.createServer((request, response) => {})
+    httpServer.listen(1069, () => {})
+    const wsServer = new WebSocketServer({ httpServer })
+    wsServer.on('request', request => {
+      const wSocket = request.accept(null, request.origin)
+      const editorClient = new EditorClient({ request, wSocket })
+      wSocket.on('message', message => {
+        if (message.type !== 'utf8') {
+          console.error('Сообщение не utf8')
+          return
+        }
+        try {
+          const request = JSON.parse(message.utf8Data)
+          editorClient.handleRequest(request)
+        } catch (error) {
+          console.log(message.utf8Data)
+          console.error(error)
+          editorClient.send('error')
+        }
+      })
+      wSocket.on('close', connection => {
+        console.log(`close ws ${request.origin}`)
+        const client = this.clients.get(request.origin)
+        if (!client) {
+          return
+        }
+        this.clients.delete(request.origin)
+        client.destructor()
+      })
+      this.clients.set(request.origin, editorClient)
+    })
+    console.log('start web server')
+  }
+}
+</code></pre>
+        </article>
+    </section>
+
+
+
+
+</div>
+
+<footer>
+    <img class="logo" src="img/toast-ui.png" style="">
+    <div class="footer-text">Pikonet Manager</div>
+</footer>
+<script>prettyPrint();</script>
+<script src="scripts/jquery.min.js"></script>
+<script src="scripts/tui-doc.js"></script>
+<script src="scripts/linenumber.js"></script>
+
+    <script>
+        var id = '_sub'.replace(/"/g, '_');
+        var selectedApi = document.getElementById(id); // do not use jquery selector
+        var $selectedApi = $(selectedApi);
+
+        $selectedApi.removeClass('hidden');
+        $selectedApi.parent().find('.glyphicon').removeClass('glyphicon-plus').addClass('glyphicon-minus');
+        showLnbApi();
+    </script>
+
+</body>
+</html>

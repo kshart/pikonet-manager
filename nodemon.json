@@ -1,0 +1,10 @@
+{
+  "restartable": "rs",
+  "verbose": true,
+  "execMap": {
+    "js": "npx babel-node"
+  },
+  "watch": [
+    "src/"
+  ]
+}

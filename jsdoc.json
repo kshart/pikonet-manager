@@ -1,0 +1,27 @@
+{
+  "sourceType": "module",
+  "tags": {
+    "allowUnknownTags": false
+  },
+  "source": {
+    "include": ["./src", "./README.md"],
+    "includePattern": ".js$"
+  },
+  "plugins": [
+    "plugins/markdown",
+    "node_modules/jsdoc-babel"
+  ],
+  "opts": {
+    "template": "node_modules/tui-jsdoc-template",
+    "encoding": "utf8",
+    "destination": "docs/",
+    "recurse": true,
+    "verbose": true
+  },
+  "templates": {
+    "name": "Pikonet Manager",
+    "footerText": "Pikonet Manager",
+    "cleverLinks": false,
+    "monospaceLinks": false
+  }
+}
