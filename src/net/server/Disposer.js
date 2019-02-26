@@ -11,7 +11,7 @@ export default class Disposer {
 
   /**
    * Сопоставление серверов и id нод
-   * @type {Map<String, Array<String>>}
+   * @type {Map<String, Set<String>>}
    */
   static clientNodes = new Map()
 
@@ -26,9 +26,23 @@ export default class Disposer {
     })
   }
 
+  /**
+   * TODO: Написать распределение на несколько серверов, + синхронизация распределения
+   */
   static allocateFreeNodes () {
     if (this.clients.size <= 0 || NodeModel.byId.size <= 0) {
       return
+    }
+    const client = this.clients.get(this.clients.keys().next().value)
+    if (!client) {
+      return
+    }
+    const nodeIdsAssigned = this.clientNodes[client.id] || new Set()
+    for (let [id, nodeModel] of NodeModel.byId) {
+      if (!nodeIdsAssigned.has(id)) {
+        client.addNode(nodeModel)
+        nodeIdsAssigned.add(id)
+      }
     }
     console.log(`allocateFreeNodes clients - ${this.clients.size} nodes - ${NodeModel.byId.size}`)
   }

@@ -10,6 +10,7 @@ const Stages = {
 }
 
 export default class Client extends EventEmitter {
+  static delimiter = '\n'
   constructor ({ serverModel }) {
     super()
     /**
@@ -35,6 +36,10 @@ export default class Client extends EventEmitter {
      */
     this.stage = Stages.BEFORE_CONNECT
     /**
+     * Сырые данные из сокета
+     */
+    this._rawDataFromSocket = null
+    /**
      * @type {net.Socket}
      */
     this.socket = net.createConnection(serverModel.url, () => {
@@ -43,17 +48,23 @@ export default class Client extends EventEmitter {
         this.send(inputTypes.serverConnect)
       }
     })
-      .on('data', data => {
-        try {
-          const request = JSON.parse(data.toString())
-          this.handleRequest(request)
-        } catch (error) {
-          console.error(error, data)
-          this.send('error')
+      .setEncoding('utf8')
+      .on('data', chunk => {
+        const buffer = this._rawDataFromSocket !== null ? this._rawDataFromSocket + chunk : chunk
+        const requests = buffer.split(Client.delimiter)
+        if (requests.length === 1) {
+          this._rawDataFromSocket = requests[0]
+        } else if (requests.length > 1) {
+          for (let i = 0; i < requests.length - 1; ++i) {
+            this.handleRequest(requests[i])
+          }
+          if (requests[requests.length - 1] !== '') {
+            this._rawDataFromSocket = requests[requests.length - 1]
+          }
         }
       })
       .on('error', err => console.log(`Ошибка соединения с сервером ${serverModel.id}`, err))
-      .on('close', () => console.log('Соединение закрыто'))
+      .on('close', () => this.destructor())
 
     console.log(`Соединение с сервером ${serverModel.id} установленно`)
   }
@@ -75,21 +86,36 @@ export default class Client extends EventEmitter {
       JSON.stringify({
         type,
         payload
-      })
+      }) + Client.delimiter
     )
   }
 
   /**
    * Обработать запрос
-   * @param {module:net/server.Request} request тело запроса
+   * @param {String} request Запрос.
    */
-  handleRequest ({ type, payload }) {
-    const method = 'on' + type.capitalize()
-    if (typeof this[method] === 'function') {
-      this[method](payload)
-    } else {
-      console.log(`Метод "${method}" не найден`)
+  handleRequest (request) {
+    try {
+      let { type, payload } = JSON.parse(request)
+      const method = 'on' + type.capitalize()
+      if (typeof this[method] === 'function') {
+        this[method](payload)
+      } else {
+        console.log(`Метод "${method}" не найден`)
+      }
+    } catch (error) {
+      console.error(error, request)
+      this.send('error')
     }
+  }
+
+  /**
+   * Добавить ноду на сервер
+   * @param {module:models.Node} nodeModel
+   */
+  addNode (nodeModel) {
+    console.log(nodeModel)
+    this.send(inputTypes.nodeCreate, { node: nodeModel })
   }
 
   onServerHello ({ name, nodesCount, nodeTypeSupport }) {
