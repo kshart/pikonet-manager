@@ -15,17 +15,17 @@ export default class EditorClient {
    * Коллбек
    * @type {Function}
    */
-  onNodeInsert = null
+  onNodeModelInsert = null
   /**
    * Коллбек
    * @type {Function}
    */
-  onNodeDelete = null
+  onNodeModelDelete = null
   /**
    * Коллбек
    * @type {Function}
    */
-  onNodeReplace = null
+  onNodeModelReplace = null
 
   /**
    * Список опрашиваемых каналов
@@ -37,26 +37,27 @@ export default class EditorClient {
   constructor ({ request, wSocket }) {
     console.log(`EditorClient create ${request.origin}`)
     this.wSocket = wSocket
-    this.onNodeInsert = (nodeConf, key) => {
+    this.onNodeModelInsert = (nodeConf, key) => {
       const { _id, __v, ...node } = nodeConf
-      this.send(outputTypes.NODE_CREATED, { node })
+      this.send(outputTypes.nodeCreated, { node })
     }
-    this.onNodeDelete = (node, key) => {
+    this.onNodeModelDelete = (node, key) => {
       console.log('delete node')
-      this.send(outputTypes.NODE_DELETED, { id: node.id })
+      this.send(outputTypes.nodeDeleted, { id: node.id })
     }
-    this.onNodeReplace = (node, key) => {
+    this.onNodeModelReplace = (node, key) => {
       console.log(node)
     }
-    Node.eventEmitter.addListener('insert', this.onNodeInsert)
-    Node.eventEmitter.addListener('delete', this.onNodeDelete)
-    Node.eventEmitter.addListener('replace', this.onNodeReplace)
+    Node.eventEmitter.addListener('insert', this.onNodeModelInsert)
+    Node.eventEmitter.addListener('delete', this.onNodeModelDelete)
+    Node.eventEmitter.addListener('replace', this.onNodeModelReplace)
   }
+
   destructor () {
     console.log('EditorClient destructor')
-    Node.eventEmitter.removeListener('insert', this.onNodeInsert)
-    Node.eventEmitter.removeListener('delete', this.onNodeDelete)
-    Node.eventEmitter.removeListener('replace', this.onNodeReplace)
+    Node.eventEmitter.removeListener('insert', this.onNodeModelInsert)
+    Node.eventEmitter.removeListener('delete', this.onNodeModelDelete)
+    Node.eventEmitter.removeListener('replace', this.onNodeModelReplace)
   }
 
   /**
@@ -88,11 +89,11 @@ export default class EditorClient {
    * @param {String} type тип пакета
    * @param {Object} payload "полезная нагрузка", зависит от типа пакета
    */
-  send (type, payload = {}) {
+  send (type, payload = null) {
     this.wSocket.send(
       JSON.stringify({
-        ...payload,
-        type
+        type,
+        payload
       })
     )
   }
@@ -102,24 +103,25 @@ export default class EditorClient {
    * @param {module:net/editor.Request} request тело запроса
    */
   handleRequest (request) {
-    const { type, ...payload } = request
-    if (typeof this[type] !== 'function') {
-      console.error(`Неопределенный тип входящего пакета "${type}"`)
-      return
+    const { type, payload } = request
+    const method = 'on' + type.capitalize()
+    if (typeof this[method] === 'function') {
+      this[method](payload)
+    } else {
+      console.log(`Метод "${method}" не найден`)
     }
-    this[type](payload)
   }
 
-  [inputTypes.NODE_GET_LIST] () {
+  onNodeGetList () {
     this.watchUpdateNodes = true
-    this.send(outputTypes.NODE_LIST, {
+    this.send(outputTypes.nodeList, {
       nodes: Array.from(Node.byId, ([, nodeModel]) => {
         const { _id, __v, ...conf } = nodeModel
         return conf
       })
     })
   }
-  [inputTypes.NODE_CREATE] ({ node }) {
+  onNodeCreate ({ node }) {
     if (!node.id) {
       let lastId = Node.byId.size
       while (Node.byId.has(`Node${lastId}`)) {
@@ -139,12 +141,12 @@ export default class EditorClient {
     const nodeModel = new Node(node)
     nodeModel.save().catch(error => console.error(error))
   }
-  [inputTypes.NODE_UPDATE] ({ nodes }) {
+  onNodeUpdate ({ nodes }) {
     for (let node of nodes) {
       Node.findOneAndUpdate({ id: node.id }, node).catch(error => console.error(error))
     }
   }
-  [inputTypes.NODE_DELETE] ({ id }) {
+  onNodeDelete ({ id }) {
     Node.deleteOne({ id }, err => {
       if (err) {
         console.error(err)
@@ -153,15 +155,15 @@ export default class EditorClient {
       }
     })
   }
-  [inputTypes.LINK_GET_LIST] () {
+  onLinkGetList () {
     this.watchUpdateLinks = true
-    this.send(outputTypes.LINK_LIST, { links: Array.from(Link.byId, ([, linkModel]) => linkModel) })
+    this.send(outputTypes.linkList, { links: Array.from(Link.byId, ([, linkModel]) => linkModel) })
   }
-  [inputTypes.LINK_CREATE] ({ link }) {
+  onLinkCreate ({ link }) {
     const linkModel = new Link(link)
     linkModel.save().catch(error => console.error(error))
   }
-  [inputTypes.LINK_DELETE] ({ id }) {
+  onLinkDelete ({ id }) {
     Link.deleteOne({ id }, err => {
       if (err) {
         console.error(err)
@@ -170,10 +172,10 @@ export default class EditorClient {
       }
     })
   }
-  [inputTypes.CHANNEL_WATCH] ({ channel }) {
+  onChannelWatch ({ channel }) {
     this.addChannelWatcher(channel)
   }
-  [inputTypes.CHANNEL_UNWATCH] ({ channel }) {
+  onChannelUnwatch ({ channel }) {
     this.removeChannelWatcher(channel)
   }
 }
