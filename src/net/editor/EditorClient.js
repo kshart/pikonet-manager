@@ -36,6 +36,7 @@ export default class EditorClient {
 
   constructor ({ request, wSocket }) {
     console.log(`EditorClient create ${request.origin}`)
+    this.lastResposeId = 0
     this.wSocket = wSocket
     this.onNodeModelInsert = (nodeConf, key) => {
       const { _id, __v, ...node } = nodeConf
@@ -86,14 +87,18 @@ export default class EditorClient {
 
   /**
    * Отправить пакет
-   * @param {String} type тип пакета
-   * @param {Object} payload "полезная нагрузка", зависит от типа пакета
+   * @param {String} method - Тип пакета.
+   * @param {Object} params - "полезная нагрузка", зависит от типа пакета.
+   * @param {String} requestId - ID запроса, для которого предназначен этот ответ.
    */
-  send (type, payload = null) {
+  send (method, params = null, requestId = null) {
+    this.lastResposeId++
     this.wSocket.send(
       JSON.stringify({
-        type,
-        payload
+        id: this.lastResposeId,
+        requestId,
+        method,
+        params
       })
     )
   }
@@ -103,23 +108,23 @@ export default class EditorClient {
    * @param {module:net/editor.Request} request тело запроса
    */
   handleRequest (request) {
-    const { type, payload } = request
-    const method = 'on' + type.capitalize()
-    if (typeof this[method] === 'function') {
-      this[method](payload)
+    const { id, requestId, method, params } = request
+    const methodName = 'on' + method.capitalize()
+    if (typeof this[methodName] === 'function') {
+      this[methodName](params, { id, requestId })
     } else {
-      console.log(`Метод "${method}" не найден`)
+      console.log(`Метод "${methodName}" не найден`)
     }
   }
 
-  onNodeGetList () {
+  onNodeGetList (params, { id }) {
     this.watchUpdateNodes = true
     this.send(outputTypes.nodeList, {
       nodes: Array.from(Node.byId, ([, nodeModel]) => {
         const { _id, __v, ...conf } = nodeModel
         return conf
       })
-    })
+    }, id)
   }
   onNodeCreate ({ node }) {
     if (!node.id) {
@@ -172,10 +177,14 @@ export default class EditorClient {
       }
     })
   }
+
   onChannelWatch ({ channel }) {
     this.addChannelWatcher(channel)
   }
   onChannelUnwatch ({ channel }) {
     this.removeChannelWatcher(channel)
+  }
+  onGetChannelList ({ nodeId }, { id }) {
+    this.send('nodeChannelList', { nodeId, channels: [1, 2, 3, 4] }, id)
   }
 }

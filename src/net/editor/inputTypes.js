@@ -18,5 +18,11 @@ export default {
    * @deprecated Промежуточное решение
    * @type {String}
    */
-  channelUnwatch: 'channelUnwatch'
+  channelUnwatch: 'channelUnwatch',
+  /**
+   * Получить список каналов в ноде.
+   * @deprecated Промежуточное решение
+   * @type {String}
+   */
+  getChannelList: 'getChannelList'
 }

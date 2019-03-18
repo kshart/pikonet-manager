@@ -15,6 +15,7 @@ export default class EditorDisposer {
    * @type {Map<Array<EditorClient>>}
    */
   static channelClients = new Map()
+
   /**
    * @deprecated Промежуточное решение
    * @param {EditorClient} client клиент
@@ -31,6 +32,7 @@ export default class EditorDisposer {
     }
     console.log(Array.from(this.channelClients))
   }
+
   /**
    * @deprecated Промежуточное решение
    * @param {EditorClient} client клиент
