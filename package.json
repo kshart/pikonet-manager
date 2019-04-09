@@ -6,7 +6,7 @@
   "scripts": {
     "dev": "npx nodemon index.js",
     "build": "npx babel src -d dist -s",
-    "serve": "npx babel-node src/index.js",
+    "serve": "npx babel-node --inspect=9222 src/index.js",
     "test": "mocha --compilers js:babel-register",
     "generate-docs": "rd /s /q docs && npx jsdoc -c jsdoc.json"
   },

@@ -78,14 +78,14 @@ export default class Client extends EventEmitter {
 
   /**
    * Отправить пакет
-   * @param {String} type тип пакета
-   * @param {Object} payload "полезная нагрузка", зависит от типа пакета
+   * @param {String} method тип пакета
+   * @param {Object} params "полезная нагрузка", зависит от типа пакета
    */
-  send (type, payload = {}) {
+  send (method, params = {}) {
     this.socket.write(
       JSON.stringify({
-        type,
-        payload
+        method,
+        params
       }) + Client.delimiter
     )
   }
@@ -96,12 +96,12 @@ export default class Client extends EventEmitter {
    */
   handleRequest (request) {
     try {
-      let { type, payload } = JSON.parse(request)
-      const method = 'on' + type.capitalize()
-      if (typeof this[method] === 'function') {
-        this[method](payload)
+      let { method, params } = JSON.parse(request)
+      const methodName = 'on' + method.capitalize()
+      if (typeof this[methodName] === 'function') {
+        this[methodName](params)
       } else {
-        console.log(`Метод "${method}" не найден`)
+        console.log(`Метод "${methodName}" не найден`)
       }
     } catch (error) {
       console.error(error, request)

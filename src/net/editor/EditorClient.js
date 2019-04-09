@@ -27,13 +27,6 @@ export default class EditorClient {
    */
   onNodeModelReplace = null
 
-  /**
-   * Список опрашиваемых каналов
-   * @deprecated Промежуточное решение
-   * @type {Array<String>}
-   */
-  listenChannels = []
-
   constructor ({ request, wSocket }) {
     console.log(`EditorClient create ${request.origin}`)
     this.lastResposeId = 0
@@ -59,30 +52,6 @@ export default class EditorClient {
     Node.eventEmitter.removeListener('insert', this.onNodeModelInsert)
     Node.eventEmitter.removeListener('delete', this.onNodeModelDelete)
     Node.eventEmitter.removeListener('replace', this.onNodeModelReplace)
-  }
-
-  /**
-   * @deprecated Промежуточное решение
-   * @param {String} channel имя канала
-   */
-  addChannelWatcher (channel) {
-    if (this.listenChannels.includes(channel)) {
-      return
-    }
-    WSocketServer.addChannelWatcher(this, channel)
-    this.listenChannels.push(channel)
-  }
-  /**
-   * @deprecated Промежуточное решение
-   * @param {String} channel имя канала
-   */
-  removeChannelWatcher (channel) {
-    const index = this.listenChannels.indexOf(channel)
-    if (index < 0) {
-      return
-    }
-    WSocketServer.removeChannelWatcher(this, channel)
-    this.listenChannels.splice(index, 1)
   }
 
   /**
