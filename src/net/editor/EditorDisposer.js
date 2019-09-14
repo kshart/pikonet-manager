@@ -9,52 +9,6 @@ export default class EditorDisposer {
    */
   static clients = new Map()
 
-  /**
-   * Клиенты для каналов
-   * @deprecated Промежуточное решение
-   * @type {Map<Array<EditorClient>>}
-   */
-  static channelClients = new Map()
-
-  /**
-   * @deprecated Промежуточное решение
-   * @param {EditorClient} client клиент
-   * @param {String} channel имя канала
-   */
-  static addChannelWatcher (client, channel) {
-    console.log('addChannelWatcher')
-    if (!this.channelClients.has(channel)) {
-      this.channelClients.set(channel, [])
-    }
-    const clients = this.channelClients.get(channel)
-    if (!clients.includes(client)) {
-      clients.push(client)
-    }
-    console.log(Array.from(this.channelClients))
-  }
-
-  /**
-   * @deprecated Промежуточное решение
-   * @param {EditorClient} client клиент
-   * @param {String} channel имя канала
-   */
-  static removeChannelWatcher (client, channel) {
-    console.log('removeChannelWatcher')
-    if (!this.channelClients.has(channel)) {
-      return
-    }
-    const clients = this.channelClients.get(channel)
-
-    const index = clients.indexOf(client)
-    if (index < 0) {
-      return
-    }
-    clients.splice(index, 1)
-    if (clients.length <= 0) {
-      this.channelClients.delete(channel)
-    }
-  }
-
   static init () {
     const httpServer = http.createServer((request, response) => {})
     httpServer.listen(1069, () => {})

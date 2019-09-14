@@ -14,7 +14,6 @@ const NodeSchema = new mongoose.Schema({
     required: true
   },
   view: Object,
-  data: Object,
   channels: Map
 }, {
   id: false,

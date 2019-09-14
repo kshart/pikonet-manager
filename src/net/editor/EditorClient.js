@@ -1,5 +1,3 @@
-import WSocketServer from './EditorDisposer'
-import inputTypes from './inputTypes'
 import outputTypes from './outputTypes'
 import Node from '@/models/Node'
 import Link from '@/models/Link'
@@ -35,12 +33,12 @@ export default class EditorClient {
       const { _id, __v, ...node } = nodeConf
       this.send(outputTypes.nodeCreated, { node })
     }
-    this.onNodeModelDelete = (node, key) => {
-      console.log('delete node')
-      this.send(outputTypes.nodeDeleted, { id: node.id })
+    this.onNodeModelDelete = (nodeConf, key) => {
+      this.send(outputTypes.nodeDeleted, { id: nodeConf.id })
     }
-    this.onNodeModelReplace = (node, key) => {
-      console.log(node)
+    this.onNodeModelReplace = (nodeConf, key) => {
+      const { _id, __v, ...node } = nodeConf
+      this.send(outputTypes.nodeUpdated, { nodeId: node.id, node })
     }
     Node.eventEmitter.addListener('insert', this.onNodeModelInsert)
     Node.eventEmitter.addListener('delete', this.onNodeModelDelete)

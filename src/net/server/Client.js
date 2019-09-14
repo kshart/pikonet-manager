@@ -1,8 +1,8 @@
 import net from 'net'
-import EventEmitter from 'events'
+import Node from '@/models/Node'
 import inputTypes from '@server/net/inputTypes'
-import outputTypes from '@server/net/outputTypes'
-import SocketServer from './Disposer'
+import outputTypes from './outputTypes'
+import EventEmitter from 'events'
 
 const Stages = {
   BEFORE_CONNECT: 'BEFORE_CONNECT',
@@ -11,6 +11,23 @@ const Stages = {
 
 export default class Client extends EventEmitter {
   static delimiter = '\n'
+
+  /**
+   * Коллбек
+   * @type {Function}
+   */
+  onNodeModelInsert = null
+  /**
+   * Коллбек
+   * @type {Function}
+   */
+  onNodeModelDelete = null
+  /**
+   * Коллбек
+   * @type {Function}
+   */
+  onNodeModelReplace = null
+
   constructor ({ serverModel }) {
     super()
     /**
@@ -39,6 +56,20 @@ export default class Client extends EventEmitter {
      * Сырые данные из сокета
      */
     this._rawDataFromSocket = null
+    this.onNodeModelInsert = (nodeConf, key) => {
+      const { _id, __v, ...node } = nodeConf
+      this.send(outputTypes.nodeCreated, { node })
+    }
+    this.onNodeModelDelete = (nodeConf, key) => {
+      this.send(outputTypes.nodeDeleted, { id: nodeConf.id })
+    }
+    this.onNodeModelReplace = (nodeConf, key) => {
+      const { _id, __v, ...node } = nodeConf
+      this.send(outputTypes.nodeUpdated, { nodeId: node.id, node })
+    }
+    Node.eventEmitter.addListener('insert', this.onNodeModelInsert)
+    Node.eventEmitter.addListener('delete', this.onNodeModelDelete)
+    Node.eventEmitter.addListener('replace', this.onNodeModelReplace)
     /**
      * @type {net.Socket}
      */
@@ -70,6 +101,10 @@ export default class Client extends EventEmitter {
   }
 
   destructor () {
+    console.log('ServerClient destructor')
+    Node.eventEmitter.removeListener('insert', this.onNodeModelInsert)
+    Node.eventEmitter.removeListener('delete', this.onNodeModelDelete)
+    Node.eventEmitter.removeListener('replace', this.onNodeModelReplace)
     this.emit('close', this)
     if (this.socket) {
       this.socket.end()
