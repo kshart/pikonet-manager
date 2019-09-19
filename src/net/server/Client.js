@@ -26,7 +26,7 @@ export default class Client extends EventEmitter {
    * Коллбек
    * @type {Function}
    */
-  onNodeModelReplace = null
+  onNodeModelUpdate = null
 
   constructor ({ serverModel }) {
     super()
@@ -63,13 +63,14 @@ export default class Client extends EventEmitter {
     this.onNodeModelDelete = (nodeConf, key) => {
       this.send(outputTypes.nodeDeleted, { id: nodeConf.id })
     }
-    this.onNodeModelReplace = (nodeConf, key) => {
+    this.onNodeModelUpdate = (nodeConf, key) => {
       const { _id, __v, ...node } = nodeConf
       this.send(outputTypes.nodeUpdated, { nodeId: node.id, node })
     }
     Node.eventEmitter.addListener('insert', this.onNodeModelInsert)
     Node.eventEmitter.addListener('delete', this.onNodeModelDelete)
-    Node.eventEmitter.addListener('replace', this.onNodeModelReplace)
+    Node.eventEmitter.addListener('replace', this.onNodeModelUpdate)
+    Node.eventEmitter.addListener('update', this.onNodeModelUpdate)
     /**
      * @type {net.Socket}
      */
@@ -104,7 +105,8 @@ export default class Client extends EventEmitter {
     console.log('ServerClient destructor')
     Node.eventEmitter.removeListener('insert', this.onNodeModelInsert)
     Node.eventEmitter.removeListener('delete', this.onNodeModelDelete)
-    Node.eventEmitter.removeListener('replace', this.onNodeModelReplace)
+    Node.eventEmitter.removeListener('replace', this.onNodeModelUpdate)
+    Node.eventEmitter.removeListener('update', this.onNodeModelUpdate)
     this.emit('close', this)
     if (this.socket) {
       this.socket.end()

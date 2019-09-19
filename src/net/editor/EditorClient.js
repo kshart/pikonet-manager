@@ -23,7 +23,7 @@ export default class EditorClient {
    * Коллбек
    * @type {Function}
    */
-  onNodeModelReplace = null
+  onNodeModelUpdate = null
 
   constructor ({ request, wSocket }) {
     console.log(`EditorClient create ${request.origin}`)
@@ -36,20 +36,22 @@ export default class EditorClient {
     this.onNodeModelDelete = (nodeConf, key) => {
       this.send(outputTypes.nodeDeleted, { id: nodeConf.id })
     }
-    this.onNodeModelReplace = (nodeConf, key) => {
+    this.onNodeModelUpdate = (nodeConf, key) => {
       const { _id, __v, ...node } = nodeConf
       this.send(outputTypes.nodeUpdated, { nodeId: node.id, node })
     }
     Node.eventEmitter.addListener('insert', this.onNodeModelInsert)
     Node.eventEmitter.addListener('delete', this.onNodeModelDelete)
-    Node.eventEmitter.addListener('replace', this.onNodeModelReplace)
+    Node.eventEmitter.addListener('replace', this.onNodeModelUpdate)
+    Node.eventEmitter.addListener('update', this.onNodeModelUpdate)
   }
 
   destructor () {
     console.log('EditorClient destructor')
     Node.eventEmitter.removeListener('insert', this.onNodeModelInsert)
     Node.eventEmitter.removeListener('delete', this.onNodeModelDelete)
-    Node.eventEmitter.removeListener('replace', this.onNodeModelReplace)
+    Node.eventEmitter.removeListener('replace', this.onNodeModelUpdate)
+    Node.eventEmitter.removeListener('update', this.onNodeModelUpdate)
   }
 
   /**
