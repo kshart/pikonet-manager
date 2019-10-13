@@ -1,5 +1,6 @@
 import Client from './Client'
 import NodeModel from '@/models/Node'
+import LinkModel from '@/models/Link'
 import ServerModel from '@/models/Server'
 
 export default class Disposer {
@@ -23,6 +24,10 @@ export default class Disposer {
     })
     NodeModel.eventEmitter.addListener('init', () => {
       this.allocateFreeNodes()
+    })
+    global.LinkModel = LinkModel
+    LinkModel.eventEmitter.addListener('init', () => {
+      console.log('LinkModel init')
     })
   }
 

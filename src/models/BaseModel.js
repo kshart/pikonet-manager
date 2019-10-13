@@ -1,9 +1,12 @@
 import EventEmitter from 'events'
 
-export default Model => {
+export default (Model, options) => {
+  const indexingByID = options ? options.indexingByID : true
   Model.eventEmitter = new EventEmitter()
   Model.byIndex = new Map()
-  Model.byId = new Map()
+  if (indexingByID) {
+    Model.byId = new Map()
+  }
 
   Model.watch().on('change', event => {
     switch (event.operationType) {
@@ -12,7 +15,9 @@ export default Model => {
         const documentKey = _id.toString()
         console.log('insert', fullDocument, documentKey)
         Model.byIndex.set(documentKey, fullDocument)
-        Model.byId.set(fullDocument.id, fullDocument)
+        if (indexingByID) {
+          Model.byId.set(fullDocument.id, fullDocument)
+        }
         Model.eventEmitter.emit('insert', fullDocument, documentKey)
         return
       }
@@ -26,7 +31,9 @@ export default Model => {
           return
         }
         Model.byIndex.delete(documentKey)
-        Model.byId.delete(fullDocument.id)
+        if (indexingByID) {
+          Model.byId.delete(fullDocument.id)
+        }
         Model.eventEmitter.emit('delete', fullDocument, documentKey)
         return
       }
@@ -35,7 +42,9 @@ export default Model => {
         const documentKey = _id.toString()
         console.log('replace', documentKey, fullDocument)
         Model.byIndex.set(documentKey, fullDocument)
-        Model.byId.set(fullDocument.id, fullDocument)
+        if (indexingByID) {
+          Model.byId.set(fullDocument.id, fullDocument)
+        }
         Model.eventEmitter.emit('replace', fullDocument, documentKey)
         return
       }
@@ -61,7 +70,9 @@ export default Model => {
     for (let model of models) {
       const documentKey = model._id.toString()
       Model.byIndex.set(documentKey, model._doc)
-      Model.byId.set(model.id, model._doc)
+      if (indexingByID) {
+        Model.byId.set(model.id, model._doc)
+      }
     }
     Model.eventEmitter.emit('init')
   })

@@ -151,7 +151,7 @@ export default class Client extends EventEmitter {
    * @param {module:models.Node} nodeModel
    */
   addNode (nodeModel) {
-    console.log(nodeModel)
+    console.log('addNode')
     this.send(inputTypes.nodeCreate, { node: nodeModel })
   }
 

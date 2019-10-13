@@ -9,26 +9,18 @@ export default class EditorClient {
    */
   wSocket = null
 
-  /**
-   * Коллбек
-   * @type {Function}
-   */
   onNodeModelInsert = null
-  /**
-   * Коллбек
-   * @type {Function}
-   */
   onNodeModelDelete = null
-  /**
-   * Коллбек
-   * @type {Function}
-   */
   onNodeModelUpdate = null
+
+  onLinkModelInsert = null
+  onLinkModelDelete = null
 
   constructor ({ request, wSocket }) {
     console.log(`EditorClient create ${request.origin}`)
     this.lastResposeId = 0
     this.wSocket = wSocket
+
     this.onNodeModelInsert = (nodeConf, key) => {
       const { _id, __v, ...node } = nodeConf
       this.send(outputTypes.nodeCreated, { node })
@@ -44,6 +36,19 @@ export default class EditorClient {
     Node.eventEmitter.addListener('delete', this.onNodeModelDelete)
     Node.eventEmitter.addListener('replace', this.onNodeModelUpdate)
     Node.eventEmitter.addListener('update', this.onNodeModelUpdate)
+
+    this.onLinkModelInsert = (linkConf, key) => {
+      const { _id, __v, ...link } = linkConf
+      this.send(outputTypes.linkCreated, { link })
+    }
+    this.onLinkModelDelete = (linkConf, key) => {
+      this.send(outputTypes.linkDeleted, {
+        from: linkConf.from,
+        to: linkConf.to
+      })
+    }
+    Link.eventEmitter.addListener('insert', this.onLinkModelInsert)
+    Link.eventEmitter.addListener('delete', this.onLinkModelDelete)
   }
 
   destructor () {
@@ -52,6 +57,9 @@ export default class EditorClient {
     Node.eventEmitter.removeListener('delete', this.onNodeModelDelete)
     Node.eventEmitter.removeListener('replace', this.onNodeModelUpdate)
     Node.eventEmitter.removeListener('update', this.onNodeModelUpdate)
+
+    Link.eventEmitter.removeListener('insert', this.onLinkModelInsert)
+    Link.eventEmitter.removeListener('delete', this.onLinkModelDelete)
   }
 
   /**
@@ -87,7 +95,6 @@ export default class EditorClient {
   }
 
   onNodeGetList (params, { id }) {
-    this.watchUpdateNodes = true
     this.send(outputTypes.nodeList, {
       nodes: Array.from(Node.byId, ([, nodeModel]) => {
         const { _id, __v, ...conf } = nodeModel
@@ -129,20 +136,24 @@ export default class EditorClient {
       }
     })
   }
-  onLinkGetList () {
-    this.watchUpdateLinks = true
-    this.send(outputTypes.linkList, { links: Array.from(Link.byId, ([, linkModel]) => linkModel) })
+  onLinkGetList (params, { id }) {
+    this.send(outputTypes.linkList, {
+      links: Array.from(Link.byIndex, ([, linkModel]) => {
+        const { _id, __v, ...conf } = linkModel
+        return conf
+      })
+    }, id)
   }
   onLinkCreate ({ link }) {
     const linkModel = new Link(link)
     linkModel.save().catch(error => console.error(error))
   }
-  onLinkDelete ({ id }) {
-    Link.deleteOne({ id }, err => {
+  onLinkDelete ({ from, to }) {
+    Link.deleteOne({ from, to }, err => {
       if (err) {
         console.error(err)
       } else {
-        console.log(`Линк '${id}' удален.`)
+        console.log(`Линк '${from}-${to}' удален.`)
       }
     })
   }
